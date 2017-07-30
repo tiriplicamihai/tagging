@@ -87,10 +87,10 @@ def main():
     tfidf = dict(zip(vectorizer.get_feature_names(), vectorizer.idf_))
     print 'vocab size :', len(tfidf)
 
-    train_vecs_w2v = np.concatenate([buildWordVector(tweet_w2v, tfidf, z, n_dim) for z in tqdm(map(lambda x: x.words, train_data))])
+    train_vecs_w2v = np.concatenate([build_word_vector(tweet_w2v, tfidf, z, n_dim) for z in tqdm(map(lambda x: x.words, train_data))])
     train_vecs_w2v = scale(train_vecs_w2v)
 
-    test_vecs_w2v = np.concatenate([buildWordVector(tweet_w2v, tfidf, z, n_dim) for z in tqdm(map(lambda x: x.words, test_data))])
+    test_vecs_w2v = np.concatenate([build_word_vector(tweet_w2v, tfidf, z, n_dim) for z in tqdm(map(lambda x: x.words, test_data))])
     test_vecs_w2v = scale(test_vecs_w2v)
 
     model = Sequential()
@@ -118,7 +118,7 @@ def transform_category(label):
     x[label] = 1
     return x.reshape(1, -1)
 
-def buildWordVector(tweet_w2v, tfidf, tokens, size):
+def build_word_vector(tweet_w2v, tfidf, tokens, size):
     vec = np.zeros(size).reshape((1, size))
     count = 0.
     for word in tokens:
