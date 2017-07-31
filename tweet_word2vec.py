@@ -1,4 +1,5 @@
-# Check that tweets in the same category have the same language.
+import sys
+
 from copy import deepcopy
 from collections import defaultdict
 import json
@@ -26,9 +27,6 @@ import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
 
-
-n_dim = 200
-
 CATEGORIES = [('education', 'education'), ('real_estate', 'real_estate'),
               ('government_organization', 'government'),
               ('health_medical_pharmacy', 'health'),
@@ -44,7 +42,7 @@ CATEGORY_LABELS = {
 INVERSE_CATEGORY_LABELS = {v: k for k, v in CATEGORY_LABELS.items()}
 
 
-def main():
+def main(dataset):
     train_data = []
     train_labels = []
     test_data = []
@@ -75,11 +73,16 @@ def main():
     train_data = labelize_tweets(train_data, 'TRAIN')
     test_data = labelize_tweets(test_data, 'TEST')
 
-    tweet_w2v = Word2Vec(size=n_dim, min_count=10)
-    tweet_w2v.build_vocab([tokens.words for tokens in tqdm(train_data)])
-    tweet_w2v.train([tokens.words for tokens in tqdm(train_data)],
-                    total_examples=len(train_data),
-                    epochs=20)
+    n_dim = 200
+    if dataset == "google":
+        tweet_w2v = gensim.models.KeyedVectors.load_word2vec_format('./GoogleNews-vectors-negative300.bin', binary=True)
+        n_dim = 300
+    else:
+        tweet_w2v = Word2Vec(size=n_dim, min_count=10)
+        tweet_w2v.build_vocab([tokens.words for tokens in tqdm(train_data)])
+        tweet_w2v.train([tokens.words for tokens in tqdm(train_data)],
+                        total_examples=len(train_data),
+                        epochs=20)
 
     print 'building tf-idf matrix ...'
     vectorizer = TfidfVectorizer(analyzer=lambda x: x, min_df=10)
@@ -106,7 +109,7 @@ def main():
 
     y_train = [CATEGORY_LABELS[l] for l in train_labels]
     one_hot_labels = keras.utils.to_categorical(y_train, num_classes=len(CATEGORY_LABELS))
-    model.fit(train_vecs_w2v, one_hot_labels, epochs=50, batch_size=32, verbose=2)
+    model.fit(train_vecs_w2v, one_hot_labels, epochs=100, batch_size=32, verbose=2)
 
     y_test = [CATEGORY_LABELS[l] for l in test_labels]
     one_hot_test_labels = keras.utils.to_categorical(y_test, num_classes=len(CATEGORY_LABELS))
@@ -155,4 +158,4 @@ def labelize_tweets(tweets, label_type):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1])
